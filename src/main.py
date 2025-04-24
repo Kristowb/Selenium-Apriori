@@ -13,54 +13,57 @@ STAKE_AMOUNT = "0.0001"
 
 # === Chrome Setup ===
 options = Options()
+options.add_argument(f"--user-data-dir={CHROME_USER_DATA_DIR}")
+options.add_argument(f"--profile-directory={PROFILE_NAME}")
 options.add_argument("--disable-blink-features=AutomationControlled")
 
+# Launch Chrome using existing profile
 driver = uc.Chrome(options=options)
-wait = WebDriverWait(driver, 3)
+wait = WebDriverWait(driver, 15)
 
 # === Open Apriori Stake Platform ===
 driver.get(APR_URL)
 print("Opened Apriori staking page.")
-time.sleep(3)
+time.sleep(7)  # Let the page load
 
 # === Staking Loop ===
 while True:
     try:
-        # 1. Input stake amount
-        print("Filling in stake amount...")
+        print("Waiting for input field...")
         input_field = wait.until(
             EC.presence_of_element_located((By.XPATH, '//input[@type="number" or @inputmode="decimal"]'))
         )
         input_field.clear()
         input_field.send_keys(STAKE_AMOUNT)
 
-        # 2. Click Stake button (may be "Stake" or "Swap Stake")
         print("Clicking 'Stake' or 'Swap Stake' button...")
         stake_button = wait.until(
-            EC.element_to_be_clickable((By.XPATH, '//button[contains(text(), "Stake") or contains(text(), "Swap Stake")]'))
+            EC.element_to_be_clickable((
+                By.XPATH,
+                '//button[contains(text(), "Stake") or contains(text(), "Swap Stake")]'
+            ))
         )
         stake_button.click()
 
-        # 3. Wait for Phantom popup and confirm
-        print("Waiting for Phantom confirmation popup...")
-        WebDriverWait(driver, 5).until(lambda d: len(d.window_handles) > 1)
+        # Switch to Phantom confirmation popup
+        print("Waiting for Phantom popup...")
+        WebDriverWait(driver, 15).until(lambda d: len(d.window_handles) > 1)
         driver.switch_to.window(driver.window_handles[-1])
 
         print("Clicking 'Approve' in Phantom popup...")
-        approve_btn = wait.until(
+        approve_button = wait.until(
             EC.element_to_be_clickable((By.XPATH, '//button[contains(text(), "Approve")]'))
         )
-        approve_btn.click()
+        approve_button.click()
 
-        # Back to staking page
+        # Switch back to main page
         driver.switch_to.window(driver.window_handles[0])
-        print("Stake confirmed. Waiting before next loop...")
-
-        time.sleep(5)  # Wait time before next loop
+        print("Stake confirmed. Waiting before next iteration...")
+        time.sleep(10)
 
     except Exception as e:
-        print(f"[!] Error during loop: {e}")
-        break  # Break the loop if something critical fails
+        print(f"[!] Error during staking loop: {e}")
+        break
 
 input("Press Enter to close browser...")
 driver.quit()
