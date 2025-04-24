@@ -16,6 +16,9 @@ options = Options()
 options.add_argument(f"--user-data-dir={CHROME_USER_DATA_DIR}")
 options.add_argument(f"--profile-directory={PROFILE_NAME}")
 options.add_argument("--disable-blink-features=AutomationControlled")
+options.add_argument("--remote-debugging-port=9222")  # Add this line
+options.add_argument("--no-sandbox")  # Optional: For debugging
+options.add_argument("--disable-dev-shm-usage")  # Optional: For debugging
 
 # Launch Chrome using existing profile
 driver = uc.Chrome(options=options)
@@ -29,12 +32,12 @@ time.sleep(7)  # Let the page load
 # === Staking Loop ===
 while True:
     try:
-        print("Waiting for input field...")
         input_field = wait.until(
-            EC.presence_of_element_located((By.XPATH, '//input[@type="number" or @inputmode="decimal"]'))
+            EC.presence_of_element_located((By.XPATH, '//input[@type="text" and @inputmode="numeric"]'))
         )
-        input_field.clear()
-        input_field.send_keys(STAKE_AMOUNT)
+        print("Input field located successfully.")
+     except Exception as e:
+        print(f"Error locating input field: {e}")
 
         print("Clicking 'Stake' or 'Swap Stake' button...")
         stake_button = wait.until(
